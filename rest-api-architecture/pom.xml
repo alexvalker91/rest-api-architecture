@@ -14,6 +14,7 @@
         <module>jmp-service-api</module>
         <module>jmp-cloud-service-impl</module>
         <module>jmp-service-rest</module>
+        <module>jmp-entity</module>
     </modules>
 
     <parent>

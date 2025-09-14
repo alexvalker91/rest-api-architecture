@@ -1,2 +1,13 @@
 server:
   port: 8081
+spring:
+  application:
+    name: rest-api-architecture
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rest-api-architecture-test3
+    username: postgres
+    password: password
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    schemas:
+      - public
