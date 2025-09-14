@@ -1,6 +1,7 @@
 package alex.valker91.service;
 
 import alex.valker91.model.Subscription;
+import alex.valker91.service.repository.UserRepository;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,12 @@ import java.util.Optional;
 @Service
 @Primary
 public class DbSubscriptionService implements SubscriptionService {
+
+    private final UserRepository userRepository;
+
+    public DbSubscriptionService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public Subscription create(Subscription subscription) {
