@@ -12,9 +12,8 @@ public class SubscriptionEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserEntity userentity;
+    @Column(name = "subscription_user_id")
+    private Long userId;
 
     @Column(name = "subscription_start_date")
     private LocalDate startDate;
@@ -22,9 +21,9 @@ public class SubscriptionEntity {
     public SubscriptionEntity() {
     }
 
-    public SubscriptionEntity(Long id, UserEntity userentity, LocalDate startDate) {
+    public SubscriptionEntity(Long id, Long userId, LocalDate startDate) {
         this.id = id;
-        this.userentity = userentity;
+        this.userId = userId;
         this.startDate = startDate;
     }
 }
