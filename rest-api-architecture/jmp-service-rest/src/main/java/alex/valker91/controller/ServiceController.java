@@ -7,6 +7,14 @@ import alex.valker91.model.SubscriptionResponseDto;
 import alex.valker91.model.User;
 import alex.valker91.service.SubscriptionService;
 import alex.valker91.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
@@ -22,6 +30,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/v1/subscriptions")
+@Tag(name = "Subscriptions", description = "Subscription management API")
 public class ServiceController {
 
     private final UserService userService;
@@ -33,6 +42,12 @@ public class ServiceController {
     }
 
     @PostMapping
+    @Operation(summary = "Create subscription", description = "Creates new subscription and return it")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Subscription created",
+                    content = @Content(schema = @Schema(implementation = SubscriptionResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
     public ResponseEntity<EntityModel<SubscriptionResponseDto>> createSubscription(@RequestBody SubscriptionRequestDto requestDto) {
         User user = userService.findById(requestDto.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + requestDto.getUserId()));
@@ -44,7 +59,13 @@ public class ServiceController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EntityModel<SubscriptionResponseDto>> updateSubscription(@PathVariable Long id, @RequestBody SubscriptionRequestDto requestDto) {
+    @Operation(summary = "Update subscription by id", description = "Updates an existing subscription by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Subscription updated",
+                    content = @Content(schema = @Schema(implementation = SubscriptionResponseDto.class))),
+            @ApiResponse(responseCode = "404", description = "Subscription not found", content = @Content)
+    })
+    public ResponseEntity<EntityModel<SubscriptionResponseDto>> updateSubscription(@Parameter(description = "Subscription id", required = true) @PathVariable Long id, @RequestBody SubscriptionRequestDto requestDto) {
         User user = userService.findById(requestDto.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + requestDto.getUserId()));
         Subscription toUpdate = DtoMapper.toSubscription(requestDto, user);
@@ -55,19 +76,35 @@ public class ServiceController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSubscription(@PathVariable Long id) {
+    @Operation(summary = "Delete subscription by id", description = "Deletes an existing subscription by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Subscription deleted"),
+            @ApiResponse(responseCode = "404", description = "Subscription not found")
+    })
+    public ResponseEntity<Void> deleteSubscription(@Parameter(description = "Subscription id", required = true) @PathVariable Long id) {
         boolean deleted = subscriptionService.deleteById(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EntityModel<SubscriptionResponseDto>> getSubscription(@PathVariable Long id) {
+    @Operation(summary = "Get subscription by id", description = "Returns subscription by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Subscription found",
+                    content = @Content(schema = @Schema(implementation = SubscriptionResponseDto.class))),
+            @ApiResponse(responseCode = "404", description = "Subscription not found", content = @Content)
+    })
+    public ResponseEntity<EntityModel<SubscriptionResponseDto>> getSubscription(@Parameter(description = "Subscription id", required = true) @PathVariable Long id) {
         return subscriptionService.findById(id)
                 .map(s -> ResponseEntity.ok(toModel(DtoMapper.toSubscriptionResponseDto(s))))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @GetMapping
+    @Operation(summary = "List subscriptions", description = "Returns all subscriptions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "List of subscriptions",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = SubscriptionResponseDto.class))))
+    })
     public ResponseEntity<CollectionModel<EntityModel<SubscriptionResponseDto>>> getAllSubscription() {
         List<EntityModel<SubscriptionResponseDto>> list = DtoMapper.toSubscriptionResponseDtoList(subscriptionService.findAll())
                 .stream()
