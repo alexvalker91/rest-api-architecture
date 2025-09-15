@@ -4,7 +4,7 @@ spring:
   application:
     name: rest-api-architecture
   datasource:
-    url: jdbc:postgresql://localhost:5432/rest-api-architecture-test3
+    url: jdbc:postgresql://localhost:5432/rest-api-architecture-test4
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver

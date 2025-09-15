@@ -7,6 +7,6 @@ CREATE TABLE IF NOT EXISTS user_table (
 
 CREATE TABLE IF NOT EXISTS subscription_table (
     id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL,
+    subscription_user_id INT NOT NULL,
     subscription_start_date DATE
 );

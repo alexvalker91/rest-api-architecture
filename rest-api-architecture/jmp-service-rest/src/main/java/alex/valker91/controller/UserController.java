@@ -5,12 +5,18 @@ import alex.valker91.model.User;
 import alex.valker91.model.UserRequestDto;
 import alex.valker91.model.UserResponseDto;
 import alex.valker91.service.UserService;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -23,20 +29,22 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponseDto> createUser(@RequestBody UserRequestDto requestDto) {
+    public ResponseEntity<EntityModel<UserResponseDto>> createUser(@RequestBody UserRequestDto requestDto) {
         User toCreate = DtoMapper.toUser(requestDto);
         toCreate.setId(null);
         User created = userService.create(toCreate);
         UserResponseDto response = DtoMapper.toUserResponseDto(created);
-        return ResponseEntity.created(URI.create("/api/users/" + created.getId())).body(response);
+        EntityModel<UserResponseDto> model = toModel(response);
+        URI selfUri = linkTo(methodOn(UserController.class).getUser(created.getId())).toUri();
+        return ResponseEntity.created(selfUri).body(model);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDto> updateUser(@PathVariable Long id, @RequestBody UserRequestDto requestDto) {
+    public ResponseEntity<EntityModel<UserResponseDto>> updateUser(@PathVariable Long id, @RequestBody UserRequestDto requestDto) {
         User toUpdate = DtoMapper.toUser(requestDto);
         toUpdate.setId(id);
         return userService.update(toUpdate)
-                .map(updated -> ResponseEntity.ok(DtoMapper.toUserResponseDto(updated)))
+                .map(updated -> ResponseEntity.ok(toModel(DtoMapper.toUserResponseDto(updated))))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
@@ -47,15 +55,30 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUser(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<UserResponseDto>> getUser(@PathVariable Long id) {
         return userService.findById(id)
-                .map(user -> ResponseEntity.ok(DtoMapper.toUserResponseDto(user)))
+                .map(user -> ResponseEntity.ok(toModel(DtoMapper.toUserResponseDto(user))))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDto>> getAllUser() {
-        List<UserResponseDto> list = DtoMapper.toUserResponseDtoList(userService.findAll());
-        return ResponseEntity.ok(list);
+    public ResponseEntity<CollectionModel<EntityModel<UserResponseDto>>> getAllUser() {
+        List<EntityModel<UserResponseDto>> list = DtoMapper.toUserResponseDtoList(userService.findAll())
+                .stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+        CollectionModel<EntityModel<UserResponseDto>> collectionModel = CollectionModel.of(list,
+                linkTo(methodOn(UserController.class).getAllUser()).withSelfRel());
+        return ResponseEntity.ok(collectionModel);
+    }
+
+    private EntityModel<UserResponseDto> toModel(UserResponseDto dto) {
+        Long id = dto.getId();
+        EntityModel<UserResponseDto> model = EntityModel.of(dto,
+                linkTo(methodOn(UserController.class).getUser(id)).withSelfRel(),
+                linkTo(methodOn(UserController.class).getAllUser()).withRel("users"));
+        model.add(linkTo(methodOn(UserController.class).updateUser(id, null)).withRel("update"));
+        model.add(linkTo(methodOn(UserController.class).deleteUser(id)).withRel("delete"));
+        return model;
     }
 }
